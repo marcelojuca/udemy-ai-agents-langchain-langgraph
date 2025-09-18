@@ -154,4 +154,9 @@ If you find this project helpful, please consider:
 
 **Built with ❤️ by Eden Marco**
 
+<<<<<<< HEAD
 </div>
+=======
+</div>
+
+>>>>>>> f9795c4 (environment setup)
