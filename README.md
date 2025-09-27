@@ -1,3 +1,11 @@
+## Introduction
+
+This is a course/training material used by me to follow the course:
+- [Cursor Course: LangChain- Develop AI Agents with LangChain & LangGraph](https://www.udemy.com/course/langchain/learn/lecture/37474628#overview)
+- Course certificate: TBD - course in progress (2025-09-27).
+
+## Getting Started
+
 Practice from course: https://www.udemy.com/course/langchain/learn/lecture/52011213#overview 
 
 Original Github: https://github.com/emarco177/langchain-course
