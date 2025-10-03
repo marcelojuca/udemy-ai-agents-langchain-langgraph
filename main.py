@@ -17,7 +17,7 @@ def format_docs(docs):
     
 if __name__ == "__main__":
     print("-----"*10)
-    print("OpenAI LLM response w/o Pinecone data...")
+    print("OpenAI LLM response w/o RAG - lesson 44")
 
     embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-3-small")
     llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # print(result)
 
     print("-----"*10)
-    print("OpenAI LLM response retrieving Pinecone data...")
+    print("OpenAI LLM response with RAG (retrieving Pinecone data) - lesson 44")
 
     vectorstore = PineconeVectorStore(index_name=os.getenv("PINECONE_INDEX_NAME"), embedding=embeddings)
     retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     print(result)
 
     print("-----"*10)
-    print("RAG chain...")
+    print("OpenAI LLM response with RAG LCEL (LangChain Expression Language) - lesson 45")
 
     template = """Use the following pieces of retrieved context to answer the question at the end.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
@@ -60,4 +60,4 @@ if __name__ == "__main__":
     print(result)
 
     print("-----"*10)
-    print("Finished RAG chain...")
+    print("Finished")
