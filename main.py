@@ -13,6 +13,7 @@ load_dotenv()
 
 
 if __name__ == "__main__":
+    print("-----"*10)
     print("OpenAI LLM response with RAG FAISS - lesson 46")
     print("Loading data...")
     pdf_path = "/Users/mhcj/Downloads/GitHub/langchain-course/2210.03629v3.pdf"
@@ -20,6 +21,7 @@ if __name__ == "__main__":
     doc = loader.load()
     print(f"Loaded {len(doc)} pages")
 
+    print("-----"*10)
     print("Splitting data...")
     text_splitter = CharacterTextSplitter(
         chunk_size=1000, chunk_overlap=30, separator="\n"
@@ -30,23 +32,30 @@ if __name__ == "__main__":
     embeddings = OpenAIEmbeddings(
         openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-3-small"
     )
+
+    print("-----"*10)
     print("Embedding data...")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     print(f"Embedded {len(chunks)} chunks")
 
+    print("-----"*10)
     print("Saving data...")
     vectorstore.save_local("faiss_index")
     print("Saved data...")
 
+    print("-----"*10)
     print("Loading data...")
     new_vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    # print(f"Loaded {len(new_vectorstore.index.ntotal)} chunks")
+    print(f"Loaded {new_vectorstore.index.ntotal} chunks")
 
-    # print("Querying data...")
-    # query = "What is the main idea of the paper?"
-    # docs = new_vectorstore.similarity_search(query)
-    # print(docs)
+    print("-----"*10)
+    print("Identifying similar documents to a query (vectorstore = FAISS' similarity_search())...")
+    query = "Give me the gist of ReAct in 3 sentences"
+    docs = new_vectorstore.similarity_search(query)
+    print(docs)
 
+    print("-----"*10)
+    print("Querying data with RAG (vectorstore = FAISS and retrieval_chain and retrieval_qa_chat_prompt)")
     retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
     combine_docs_chain = create_stuff_documents_chain(
         llm=OpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini"),
@@ -56,6 +65,6 @@ if __name__ == "__main__":
         retriever=new_vectorstore.as_retriever(), combine_docs_chain=combine_docs_chain
     )
     result = retrieval_chain.invoke(
-        input={"input": "Give me the gist of ReAct in 3 sentences"}
+        input={"input": query}
     )
     print(result["answer"])
