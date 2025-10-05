@@ -52,20 +52,12 @@ requests.adapters.DEFAULT_RETRIES = 3
 session = requests.Session()
 session.verify = certifi.where() if certifi.where() else True
 
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    show_progress_bar=True,
-    chunk_size=50,
-    retry_min_seconds=10,
-)
+embeddings = OpenAIEmbeddings( model="text-embedding-3-small", show_progress_bar=False, chunk_size=50, retry_min_seconds=10)
 
 # for local vector store
-# chroma = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+# vector_store = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
 # for online vector store
-vector_store = PineconeVectorStore(
-    index_name="langchain-docs-2025",
-    embedding=embeddings,
-)
+vector_store = PineconeVectorStore(index_name="langchain-docs-2025", embedding=embeddings)
 tavily_extract = TavilyExtract()
 tavily_map = TavilyMap(max_depth=5, max_breadth=20, max_pages=1000)
 tavily_crawl = TavilyCrawl()
@@ -127,6 +119,38 @@ async def async_extract(url_batches: List[List[str]]):
     return all_pages
 
 
+async def index_documents_async(documents: List[Document], batch_size: int = 50):
+    """Process documents in batches and index them into the vector store."""
+    log_info(f"VectorStore Indexing: Preparing to add {len(documents)} documents into the vector store")
+
+    # Create a list of batches
+    batches = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]
+    log_info(f"VectorStore Indexing: Split into {len(batches)} batches of {batch_size} documents each")
+
+    # Coroutine to process all batches concurrently
+    async def add_batch(batch: List[Document], batch_num: int):
+        try:
+            log_info(f"VectorStore Indexing: Adding batch {batch_num} of {len(batch)} documents")
+            await vector_store.aadd_documents(batch)
+            log_success(f"VectorStore Indexing: Batch {batch_num} added successfully")
+        except Exception as e:
+            log_error(f"VectorStore Indexing: Failed to add batch {batch_num}: {e}")
+            raise e
+
+    tasks = [add_batch(batch, i + 1) for i, batch in enumerate(batches)]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    log_success(f"VectorStore Indexing: Added {len(documents)} documents into the vector store")
+
+    # Count successful batches
+    successful_batches = sum(1 for result in results if not isinstance(result, Exception))
+    log_success(f"VectorStore Indexing: Successfully added {successful_batches} batches of {batch_size} documents each")
+
+    # Count failed batches
+    failed_batches = sum(1 for result in results if isinstance(result, Exception))
+    log_warning(f"VectorStore Indexing: Failed to add {failed_batches} batches of {batch_size} documents each")
+    log_warning(f"VectorStore Indexing: Consider increasing the batch size or retrying failed batches")
+
+
 async def main():
     """Main async function to orchestrate the entire process."""
     log_header("DOCUMENTATION INGESTION PIPELINE")
@@ -144,20 +168,40 @@ async def main():
     # Extract documents from batches concurrently
     all_docs = await async_extract(url_batches)
 
-    log_info("🔍 TavilyCrawl: Starting to crawl documentation from https://python.langchain.com/")
+    # Split documents into chunks
+    log_header("DOCUMENT CHUNKING PHASE")
+    log_info(f"Text splitter: Splitting {len(all_docs)} documents into chunks")
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
+    splitted_docs = text_splitter.split_documents(all_docs)
+    log_success(f"Text splitter: Created {len(splitted_docs)} chunks from {len(all_docs)} documents.")
 
-    res = tavily_crawl.invoke(
-        {
-            "url": "https://python.langchain.com/",
-            "max_depth": 1,
-            "extract_depth": "advanced",
-        }
-    )
-    all_docs = [
-        Document(page_content=result["raw_content"], metadata={"source": result["url"]})
-        for result in res["results"]
-    ]
-    log_success(f"TavilyCrawl: Successfully crawled {len(all_docs)} URLs from documentation site")
+    # Process documents asynchronously in batches and index them into the vector store
+    log_header("VECTOR STORAGE PHASE")
+    await index_documents_async(splitted_docs, batch_size=500)
+
+    log_header("DOCUMENTATION INGESTION PIPELINE COMPLETED")
+    log_success("🎉 Documentation ingestion pipeline completed successfully")
+    log_info("Summary:")
+    log_info(f"Total URLs processed: {len(site_map['results'])}")
+    log_info(f"Total documents extracted: {len(all_docs)}")
+    log_info(f"Total chunks created: {len(splitted_docs)}")
+    
+
+
+    # log_info("🔍 TavilyCrawl: Starting to crawl documentation from https://python.langchain.com/")
+
+    # res = tavily_crawl.invoke(
+    #     {
+    #         "url": "https://python.langchain.com/",
+    #         "max_depth": 1,
+    #         "extract_depth": "advanced",
+    #     }
+    # )
+    # all_docs = [
+    #     Document(page_content=result["raw_content"], metadata={"source": result["url"]})
+    #     for result in res["results"]
+    # ]
+    # log_success(f"TavilyCrawl: Successfully crawled {len(all_docs)} URLs from documentation site")
 
 
 if __name__ == "__main__":
