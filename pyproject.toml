@@ -5,14 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "black>=25.1.0",
-    "isort>=6.0.1",
+    "black>=25.9.0",
+    "isort>=6.1.0",
     "langchain>=0.3.27",
-<<<<<<< HEAD
-    "langchain-google-genai>=2.0.0",
-=======
->>>>>>> f9795c4 (environment setup)
-    "langchain-ollama>=0.3.8",
-    "langchain-openai>=0.3.33",
+    "langchain-experimental>=0.3.4",
+    "langchain-openai>=0.3.35",
+    "langchainhub>=0.1.21",
+    "pillow>=11.3.0",
     "python-dotenv>=1.1.1",
+    "qrcode>=8.2",
 ]
