@@ -1,7 +1,7 @@
 import asyncio
 import os
-from re import M
 import ssl
+from re import M
 from typing import Any, Dict, List
 
 import certifi
@@ -14,9 +14,11 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_tavily import TavilyCrawl, TavilyExtract, TavilyMap
 
-from logger import Colors, log_error, log_header, log_info, log_success, log_warning
+from logger import (Colors, log_error, log_header, log_info, log_success,
+                    log_warning)
 
 load_dotenv()
+
 
 # Configure SSL context to handle certificate verification issues
 def configure_ssl():
@@ -41,8 +43,11 @@ def configure_ssl():
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
-            log_warning("SSL: Disabled certificate verification (not recommended for production)")
+            log_warning(
+                "SSL: Disabled certificate verification (not recommended for production)"
+            )
             return ssl_context
+
 
 # Configure SSL
 ssl_context = configure_ssl()
@@ -52,12 +57,19 @@ requests.adapters.DEFAULT_RETRIES = 3
 session = requests.Session()
 session.verify = certifi.where() if certifi.where() else True
 
-embeddings = OpenAIEmbeddings( model="text-embedding-3-small", show_progress_bar=False, chunk_size=50, retry_min_seconds=10)
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    show_progress_bar=False,
+    chunk_size=50,
+    retry_min_seconds=10,
+)
 
 # for local vector store
 # vector_store = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
 # for online vector store
-vector_store = PineconeVectorStore(index_name="langchain-docs-2025", embedding=embeddings)
+vector_store = PineconeVectorStore(
+    index_name="langchain-docs-2025", embedding=embeddings
+)
 tavily_extract = TavilyExtract()
 tavily_map = TavilyMap(max_depth=5, max_breadth=20, max_pages=1000)
 tavily_crawl = TavilyCrawl()
@@ -78,7 +90,9 @@ async def extract_batch(urls: List[str], batch_num: int) -> List[Dict[str, Any]]
         log_info(f"TavilyExtract: Processing batch {batch_num} with {len(urls)} URLs")
         docs = await tavily_extract.ainvoke(input={"urls": urls})
         results = docs.get("results", [])
-        log_success(f"TavilyExtract: Batch {batch_num} completed - extracted {len(results)} documents")
+        log_success(
+            f"TavilyExtract: Batch {batch_num} completed - extracted {len(results)} documents"
+        )
         return results
     except Exception as e:
         log_error(f"TavilyExtract: Failed to extract batch {batch_num}: {e}")
@@ -98,9 +112,7 @@ async def async_extract(url_batches: List[List[str]]):
     failed_batches = 0
     for batch_result in batch_results:
         if isinstance(batch_result, Exception):
-            log_error(
-                f"TavilyExtract: Failed to extract batch {batch_result}"
-            )
+            log_error(f"TavilyExtract: Failed to extract batch {batch_result}")
             failed_batches += 1
         else:
             for extracted_page in batch_result:
@@ -110,27 +122,39 @@ async def async_extract(url_batches: List[List[str]]):
                 )
                 all_pages.append(document)
 
-    log_success(f"TavilyExtract: Extraction complete - Successfully extracted {len(all_pages)} documents from {len(url_batches)} batches")
+    log_success(
+        f"TavilyExtract: Extraction complete - Successfully extracted {len(all_pages)} documents from {len(url_batches)} batches"
+    )
 
     if failed_batches > 0:
         log_warning(f"TavilyExtract: Failed to extract {failed_batches} batches")
-        log_warning(f"TavilyExtract: Consider increasing the batch size or retrying failed batches")
-    
+        log_warning(
+            f"TavilyExtract: Consider increasing the batch size or retrying failed batches"
+        )
+
     return all_pages
 
 
 async def index_documents_async(documents: List[Document], batch_size: int = 50):
     """Process documents in batches and index them into the vector store."""
-    log_info(f"VectorStore Indexing: Preparing to add {len(documents)} documents into the vector store")
+    log_info(
+        f"VectorStore Indexing: Preparing to add {len(documents)} documents into the vector store"
+    )
 
     # Create a list of batches
-    batches = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]
-    log_info(f"VectorStore Indexing: Split into {len(batches)} batches of {batch_size} documents each")
+    batches = [
+        documents[i : i + batch_size] for i in range(0, len(documents), batch_size)
+    ]
+    log_info(
+        f"VectorStore Indexing: Split into {len(batches)} batches of {batch_size} documents each"
+    )
 
     # Coroutine to process all batches concurrently
     async def add_batch(batch: List[Document], batch_num: int):
         try:
-            log_info(f"VectorStore Indexing: Adding batch {batch_num} of {len(batch)} documents")
+            log_info(
+                f"VectorStore Indexing: Adding batch {batch_num} of {len(batch)} documents"
+            )
             await vector_store.aadd_documents(batch)
             log_success(f"VectorStore Indexing: Batch {batch_num} added successfully")
         except Exception as e:
@@ -139,32 +163,46 @@ async def index_documents_async(documents: List[Document], batch_size: int = 50)
 
     tasks = [add_batch(batch, i + 1) for i, batch in enumerate(batches)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    log_success(f"VectorStore Indexing: Added {len(documents)} documents into the vector store")
+    log_success(
+        f"VectorStore Indexing: Added {len(documents)} documents into the vector store"
+    )
 
     # Count successful batches
-    successful_batches = sum(1 for result in results if not isinstance(result, Exception))
-    log_success(f"VectorStore Indexing: Successfully added {successful_batches} batches of {batch_size} documents each")
+    successful_batches = sum(
+        1 for result in results if not isinstance(result, Exception)
+    )
+    log_success(
+        f"VectorStore Indexing: Successfully added {successful_batches} batches of {batch_size} documents each"
+    )
 
     # Count failed batches
     failed_batches = sum(1 for result in results if isinstance(result, Exception))
-    log_warning(f"VectorStore Indexing: Failed to add {failed_batches} batches of {batch_size} documents each")
-    log_warning(f"VectorStore Indexing: Consider increasing the batch size or retrying failed batches")
+    log_warning(
+        f"VectorStore Indexing: Failed to add {failed_batches} batches of {batch_size} documents each"
+    )
+    log_warning(
+        f"VectorStore Indexing: Consider increasing the batch size or retrying failed batches"
+    )
 
 
 async def main():
     """Main async function to orchestrate the entire process."""
     log_header("DOCUMENTATION INGESTION PIPELINE")
 
-    log_info("🔍 TavilyMap: Starting to map documentation from https://python.langchain.com/")
+    log_info(
+        "🔍 TavilyMap: Starting to map documentation from https://python.langchain.com/"
+    )
     site_map = tavily_map.invoke("https://python.langchain.com/")
-    log_success(f"TavilyMap: Successfully mapped {len(site_map['results'])} URLs from documentation site")
-    
-    
+    log_success(
+        f"TavilyMap: Successfully mapped {len(site_map['results'])} URLs from documentation site"
+    )
+
     # Split URLs into chunks of 20
     url_batches = chunk_urls(site_map["results"], 20)
-    log_info(f"URL processing: Splitting {len(site_map['results'])} URLs into {len(url_batches)} batches of 20")
+    log_info(
+        f"URL processing: Splitting {len(site_map['results'])} URLs into {len(url_batches)} batches of 20"
+    )
 
-    
     # Extract documents from batches concurrently
     all_docs = await async_extract(url_batches)
 
@@ -173,7 +211,9 @@ async def main():
     log_info(f"Text splitter: Splitting {len(all_docs)} documents into chunks")
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
     splitted_docs = text_splitter.split_documents(all_docs)
-    log_success(f"Text splitter: Created {len(splitted_docs)} chunks from {len(all_docs)} documents.")
+    log_success(
+        f"Text splitter: Created {len(splitted_docs)} chunks from {len(all_docs)} documents."
+    )
 
     # Process documents asynchronously in batches and index them into the vector store
     log_header("VECTOR STORAGE PHASE")
@@ -185,8 +225,6 @@ async def main():
     log_info(f"Total URLs processed: {len(site_map['results'])}")
     log_info(f"Total documents extracted: {len(all_docs)}")
     log_info(f"Total chunks created: {len(splitted_docs)}")
-    
-
 
     # log_info("🔍 TavilyCrawl: Starting to crawl documentation from https://python.langchain.com/")
 
