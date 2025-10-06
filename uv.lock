@@ -923,6 +923,7 @@ dependencies = [
     { name = "langchain-pinecone" },
     { name = "langchain-tavily" },
     { name = "langchainhub" },
+    { name = "pillow" },
     { name = "python-dotenv" },
     { name = "streamlit" },
 ]
@@ -939,6 +940,7 @@ requires-dist = [
     { name = "langchain-pinecone", specifier = ">=0.2.12" },
     { name = "langchain-tavily", specifier = ">=0.1.0" },
     { name = "langchainhub", specifier = ">=0.1.21" },
+    { name = "pillow", specifier = ">=10.0.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "streamlit", specifier = ">=1.50.0" },
 ]
