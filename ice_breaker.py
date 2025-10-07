@@ -4,9 +4,10 @@ from langchain_openai import ChatOpenAI
 
 from agents.linkedin_lookup_agent import lookup as linkedin_lookup_agent
 from third_parties.linkedin import scrape_linkedin_profile
-from output_parsers import summary_parser
+from output_parsers import summary_parser, Summary
+from typing import Tuple
 
-def ice_break_with(name: str) -> str:
+def ice_break_with(name: str) -> Tuple[Summary, str]:
     linkedin_profile_url = linkedin_lookup_agent(name=name)
     linkedin_data = scrape_linkedin_profile(linkedin_profile_url=linkedin_profile_url)
 
@@ -24,8 +25,8 @@ def ice_break_with(name: str) -> str:
 
     llm = ChatOpenAI(temperature=0, model_name="gpt-4o-mini")
     chain = summary_prompt_template | llm | summary_parser
-    res = chain.invoke({"information": linkedin_data})
-    print(res)
+    res: Summary = chain.invoke({"information": linkedin_data})
+    return res, linkedin_data.get("photoUrl")
 
 
 if __name__ == "__main__":
