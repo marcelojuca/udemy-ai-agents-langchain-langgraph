@@ -1,6 +1,4 @@
 import datetime
-import requests
-from bs4 import BeautifulSoup
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
