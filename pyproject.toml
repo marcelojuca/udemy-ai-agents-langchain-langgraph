@@ -1,0 +1,19 @@
+[project]
+name = "langchain-course"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.14.2",
+    "black>=25.9.0",
+    "chromadb>=1.1.1",
+    "isort>=6.1.0",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.31",
+    "langchainhub>=0.1.21",
+    "langgraph>=0.6.10",
+    "pytest>=8.4.2",
+    "python-dotenv>=1.1.1",
+    "tavily-python>=0.7.12",
+]
