@@ -11,14 +11,19 @@ from schemas import AnswerQuestion, ReviseAnswer
 tavily_tool = TavilySearch(max_results=5)
 
 
-def run_queries(search_queries: list[str], **kwargs):
+def run_search_queries(search_query: list[str], **kwargs):
     """Run search queries and return the results"""
-    return tavily_tool.batch([{"query": query} for query in search_queries])
+    return tavily_tool.batch([{"query": query} for query in search_query])
+
+
+def run_references(references: list[str], **kwargs):
+    """Process references (no search needed)"""
+    return [f"Reference processed: {ref}" for ref in references]
 
 
 execute_tools = ToolNode(
     [
-        StructuredTool.from_function(run_queries, name=AnswerQuestion.__name__),
-        StructuredTool.from_function(run_queries, name=ReviseAnswer.__name__),
+        StructuredTool.from_function(run_search_queries, name=AnswerQuestion.__name__),
+        StructuredTool.from_function(run_references, name=ReviseAnswer.__name__),
     ]
 )
