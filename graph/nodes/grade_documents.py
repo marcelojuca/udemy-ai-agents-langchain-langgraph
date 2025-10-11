@@ -24,7 +24,9 @@ def grade_documents(state: GraphState) -> Dict[str, Any]:
     web_search = False
 
     for doc in documents:
-        score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
+        score = retrieval_grader.invoke(
+            {"question": question, "document": doc.page_content}
+        )
         if score.binary_score.lower() == "yes":
             print("---GRADE: DOCUMENT RELEVANT---")
             filtered_documents.append(doc)
@@ -33,4 +35,8 @@ def grade_documents(state: GraphState) -> Dict[str, Any]:
             web_search = True
             continue
 
-    return {"documents": filtered_documents, "web_search": web_search, "question": question}
+    return {
+        "documents": filtered_documents,
+        "web_search": web_search,
+        "question": question,
+    }

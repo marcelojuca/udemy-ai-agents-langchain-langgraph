@@ -1,10 +1,9 @@
 from dotenv import load_dotenv
-import os
+
 load_dotenv()
 
-def main():
-    print("Hello from langchain-course!")
-
+from graph.graph import app
 
 if __name__ == "__main__":
-    main()
+    print("Hello Advanced RAG!")
+    print(app.invoke({"question": "What is agent memory?"}))

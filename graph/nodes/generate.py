@@ -3,6 +3,7 @@ from typing import Any, Dict
 from graph.chains.generation import generation_chain
 from graph.state import GraphState
 
+
 def generate(state: GraphState) -> Dict[str, Any]:
     """
     Generates a response to the user question
