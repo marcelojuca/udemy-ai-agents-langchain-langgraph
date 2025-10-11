@@ -5,6 +5,9 @@ load_dotenv()
 from graph.chains.retrieval_grader import GradeDocuments, retrieval_grader
 from ingestion import retriever
 
+from pprint import pprint
+from graph.chains.generation import generation_chain
+
 def test_retrieval_grader_answer_yes() -> None:
     question = "agent memory"
     docs = retriever.invoke(question)
@@ -28,3 +31,9 @@ def test_retrieval_grader_answer_no() -> None:
     assert hasattr(docs[0], 'page_content')
     assert res is not None
     assert res.binary_score == "no"
+
+def test_generation_chain() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    res = generation_chain.invoke({"question": question, "context": docs})
+    pprint(res)
