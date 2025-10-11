@@ -7,6 +7,7 @@ from pprint import pprint
 from graph.chains.generation import generation_chain
 from graph.chains.retrieval_grader import GradeDocuments, retrieval_grader
 from ingestion import retriever
+from graph.chains.hallucination_grader import hallucination_grader, GradeHallucinations
 
 
 def test_retrieval_grader_answer_yes() -> None:
@@ -42,5 +43,25 @@ def test_retrieval_grader_answer_no() -> None:
 def test_generation_chain() -> None:
     question = "agent memory"
     docs = retriever.invoke(question)
-    res = generation_chain.invoke({"question": question, "context": docs})
-    pprint(res)
+    generation = generation_chain.invoke({"question": question, "context": docs})
+    # pprint(generation)
+
+
+def test_hallucination_grader_answer_yes() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    generation = generation_chain.invoke({"question": question, "context": docs})
+    res: GradeHallucinations = hallucination_grader.invoke({"generation": generation, "documents": docs})
+    assert res.binary_score == "yes"
+
+def test_hallucination_grader_answer_no() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    generation = generation_chain.invoke({"question": question, "context": docs})
+    res: GradeHallucinations = hallucination_grader.invoke(
+        {
+            "generation": "The capital of France is Paris.", 
+            "documents": docs
+        }
+    )
+    assert res.binary_score == "no"
