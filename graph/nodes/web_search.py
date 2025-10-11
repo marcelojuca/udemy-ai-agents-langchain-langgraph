@@ -14,7 +14,8 @@ def web_search(state: GraphState) -> Dict[str, Any]:
     """
     print("---PERFORMING WEB SEARCH---")
     question = state["question"]
-    documents = state["documents"]
+    # handle cases where documents doesn't exist in the state 
+    documents = state.get("documents", [])
     docs = web_search_tool.invoke(question)
     web_results = "\n".join(docs)
     web_results = Document(page_content=web_results)

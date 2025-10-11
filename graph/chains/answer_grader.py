@@ -3,12 +3,14 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableSequence
 from langchain_openai import ChatOpenAI
 
+
 class GradeAnswer(BaseModel):
     """Binary score for answer quality."""
 
     binary_score: str = Field(
         description="Answer addresses the question, 'yes' or 'no'."
     )
+
 
 llm = ChatOpenAI(temperature=0)
 structured_llm_grader = llm.with_structured_output(GradeAnswer)

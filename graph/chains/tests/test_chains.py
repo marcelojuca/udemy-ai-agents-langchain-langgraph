@@ -5,9 +5,10 @@ load_dotenv()
 from pprint import pprint
 
 from graph.chains.generation import generation_chain
+from graph.chains.hallucination_grader import GradeHallucinations, hallucination_grader
 from graph.chains.retrieval_grader import GradeDocuments, retrieval_grader
+from graph.chains.routers import RouteQuery, question_router
 from ingestion import retriever
-from graph.chains.hallucination_grader import hallucination_grader, GradeHallucinations
 
 
 def test_retrieval_grader_answer_yes() -> None:
@@ -51,17 +52,30 @@ def test_hallucination_grader_answer_yes() -> None:
     question = "agent memory"
     docs = retriever.invoke(question)
     generation = generation_chain.invoke({"question": question, "context": docs})
-    res: GradeHallucinations = hallucination_grader.invoke({"generation": generation, "documents": docs})
+    res: GradeHallucinations = hallucination_grader.invoke(
+        {"generation": generation, "documents": docs}
+    )
     assert res.binary_score == "yes"
+
 
 def test_hallucination_grader_answer_no() -> None:
     question = "agent memory"
     docs = retriever.invoke(question)
     generation = generation_chain.invoke({"question": question, "context": docs})
     res: GradeHallucinations = hallucination_grader.invoke(
-        {
-            "generation": "The capital of France is Paris.", 
-            "documents": docs
-        }
+        {"generation": "The capital of France is Paris.", "documents": docs}
     )
     assert res.binary_score == "no"
+
+
+def test_router_to_vectorstore() -> None:
+    question = "agent memory"
+    res: RouteQuery = question_router.invoke({"question": question})
+    assert res.datasource == "vectorstore"
+
+
+def test_router_to_websearch() -> None:
+    question = "What is the capital of France?"
+    res: RouteQuery = question_router.invoke({"question": question})
+    assert res.datasource == "websearch"
+
