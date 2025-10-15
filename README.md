@@ -2,7 +2,7 @@
 
 This is a course/training material used by me to follow the course:
 - [Cursor Course: LangChain- Develop AI Agents with LangChain & LangGraph](https://www.udemy.com/course/langchain/learn/lecture/37474628#overview)
-- Course certificate: TBD - course in progress (2025-09-27).
+- [Course certificate](https://www.udemy.com/certificate/UC-bd3ab116-c45a-4e93-bc19-812035966c88/)
 
 ## Getting Started
 
