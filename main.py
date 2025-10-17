@@ -9,11 +9,10 @@ import os
 
 load_dotenv()
 
-# import os
-
-
 def main():
+    print("-"*30)
     print("Hello from langchain-course!")
+    print("-"*30)
     # print(os.getenv("OPENAI_API_KEY"))
     # print(os.getenv("GOOGLE_API_KEY"))
 
@@ -36,7 +35,8 @@ Musk's political activities, views, and statements have made him a polarizing fi
     """
 
     summary_prompt_template = PromptTemplate(
-        input_variables=["information"], template=summary_template
+        input_variables=["information"], 
+        template=summary_template,
     )
 
     llm = ChatOpenAI(model="gpt-4.1-nano", temperature=0)
@@ -45,6 +45,6 @@ Musk's political activities, views, and statements have made him a polarizing fi
     chain = summary_prompt_template | llm
     response = chain.invoke(input={"information": information})
     print(response.content)
-
+    print("-"*30)
 if __name__ == "__main__":
     main()
