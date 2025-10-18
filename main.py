@@ -1,3 +1,6 @@
+# use of predefined react function from langchain
+# instead of developing our own react agent from scratch
+
 from dotenv import load_dotenv
 
 load_dotenv()
