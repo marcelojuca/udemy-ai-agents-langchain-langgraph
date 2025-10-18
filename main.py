@@ -1,4 +1,4 @@
-# implementation of the react agent using the langchain framework
+# implementation of the react agent using the langchain framework from scratch
 # instead of using "from langchain.agents.react.agent import create_react_agent"
 
 from typing import List, Union
