@@ -1,3 +1,6 @@
+# implementation of the react agent using the langchain framework
+# instead of using "from langchain.agents.react.agent import create_react_agent"
+
 from typing import List, Union
 
 from dotenv import load_dotenv
@@ -7,6 +10,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import Tool, tool
 from langchain_core.tools.render import render_text_description
 from langchain_openai import ChatOpenAI
+from langchain import hub
 
 from callbacks import AgentCallbackHandler
 from log import format_log
@@ -32,66 +36,51 @@ def find_tool_by_name(tools: List[Tool], name: str) -> Tool:
     raise ValueError(f"Tool with name {name} not found")
 
 
-def main():
+def my_react_agent(input: str) -> str:
     # print("Hello from langchain-course!")
     # print(get_text_length("Dog"))
     # print(get_text_length.invoke(input={"text": "Dog"}))
     tools = [get_text_length]
-    template = """
-    Answer the following questions as best you can. You have access to the following tools:
 
-    {tools}
+    # https://smith.langchain.com/hub/hwchase17/react
+    react_prompt = hub.pull("hwchase17/react")
 
-    Use the following format:
-
-    Question: the input question you must answer
-    Thought: you should always think about what to do
-    Action: the action to take, should be one of [{tool_names}]
-    Action Input: the input to the action
-    Observation: the result of the action
-    ... (this Thought/Action/Action Input/Observation can repeat N times)
-    Thought: I now know the final answer
-    Final Answer: the final answer to the original input question
-
-    Begin!
-
-    Question: {input}
-    Thought: {agent_scratchpad}
-    """
-
-    # "partial" populates the variables in the template
-    prompt = PromptTemplate.from_template(template).partial(
-        tools=render_text_description(tools),
+    prompt = PromptTemplate(
+        input_variables=["tools", "input", "agent_scratchpad", "tool_names"],
+        template=react_prompt.template,
+    ).partial(
+        tools=render_text_description(tools),  # render the tools to a text description
         tool_names=", ".join([t.name for t in tools]),
     )
-
+        
     # lesson 27 01:01
     llm = ChatOpenAI(
         model="gpt-4o",
         temperature=0,
-        stop="Observation:",
+        stop="Observation:",  # stop the llm when it sees the word "Observation:"
         callbacks=[AgentCallbackHandler()],
     )
-
-    # history of intermediate steps
-    intermediate_steps = []
 
     # the "|" takes the output of the previous step and passes it as input to the next step
     agent = (
         {
             "input": lambda x: x["input"],
-            "agent_scratchpad": lambda x: format_log(x["agent_scratchpad"]),
+            "agent_scratchpad": lambda x: format_log(x["agent_scratchpad"]),  # format the agent scratchpad to a log
         }
         | prompt
         | llm
-        | ReActSingleInputOutputParser()
+        | ReActSingleInputOutputParser() # format the output of the llm to the ReAct format
     )
 
+    intermediate_steps = []   # history of intermediate steps
     agent_step = ""
+
+    # loop until the agent finishes
     while not isinstance(agent_step, AgentFinish):
         agent_step: Union[AgentAction, AgentFinish] = agent.invoke(
             {
-                "input": "What is the length of the text 'Dog'?",
+                # "input": "What is the length of the text 'Dog'?",
+                "input": input,
                 "agent_scratchpad": intermediate_steps,
             }
         )
@@ -101,6 +90,11 @@ def main():
             observation = tool.invoke(agent_step.tool_input)
             intermediate_steps.append((agent_step, str(observation)))
 
+    return agent_step.return_values["output"]
+
+def main():
+    result = my_react_agent(input="What is the length of the text 'Dog'?")
+    print(result)
 
 if __name__ == "__main__":
     main()
