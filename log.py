@@ -3,7 +3,7 @@ from typing import List, Tuple
 from langchain_core.agents import AgentAction
 
 
-def format_log(
+def my_format_log(
     intermediate_steps: List[Tuple[AgentAction, str]],
     observation_prefix: str = "Observation:",
     llm_prefix: str = "Thought:",

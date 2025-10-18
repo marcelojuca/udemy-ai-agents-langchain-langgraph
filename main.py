@@ -13,7 +13,7 @@ from langchain_openai import ChatOpenAI
 from langchain import hub
 
 from callbacks import AgentCallbackHandler
-from log import format_log
+from log import my_format_log
 
 load_dotenv()
 
@@ -65,7 +65,7 @@ def my_react_agent(input: str) -> str:
     agent = (
         {
             "input": lambda x: x["input"],
-            "agent_scratchpad": lambda x: format_log(x["agent_scratchpad"]),  # format the agent scratchpad to a log
+            "agent_scratchpad": lambda x: my_format_log(x["agent_scratchpad"]),  # format the agent scratchpad to a log
         }
         | prompt
         | llm
