@@ -9,6 +9,7 @@ from langchain_text_splitters import CharacterTextSplitter
 load_dotenv()
 
 if __name__ == "__main__":
+    print("lesson 48")
     print("Ingesting data...")
     loader = TextLoader("medium-blog.txt")
     document = loader.load()
