@@ -19,19 +19,20 @@ if __name__ == "__main__":
     print("-----"*10)
     print("OpenAI LLM response w/o RAG - lesson 44")
 
-    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-3-small")
     llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
     query = "what is Pinecone in machine learning?"
     chain = PromptTemplate.from_template(template=query) | llm
-    # result = chain.invoke(input={})
-    # print(result)
+    result = chain.invoke(input={})
+    print(result)
 
     print("-----"*10)
     print("OpenAI LLM response with RAG (retrieving Pinecone data) - lesson 44")
 
-    vectorstore = PineconeVectorStore(index_name=os.getenv("PINECONE_INDEX_NAME"), embedding=embeddings)
-    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
+    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat") # https://smith.langchain.com/hub/langchain-ai/retrieval-qa-chat
     combine_docs_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
+
+    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-3-small")
+    vectorstore = PineconeVectorStore(index_name=os.getenv("PINECONE_INDEX_NAME"), embedding=embeddings)
     retrieval_chain = create_retrieval_chain(retriever=vectorstore.as_retriever(), combine_docs_chain=combine_docs_chain)
     result = retrieval_chain.invoke(input={"input": query})
     print(result)
@@ -52,7 +53,10 @@ if __name__ == "__main__":
 
     custom_rag_prompt = PromptTemplate.from_template(template=template)
     rag_chain = (
-        {"context": vectorstore.as_retriever() | format_docs, "question": RunnablePassthrough()}
+        {
+            "context": vectorstore.as_retriever() | format_docs, # retrieve the documents from the vector store and format the documents to a string
+            "question": RunnablePassthrough() # the question will be unchanged and propagated to the next step
+        }
         | custom_rag_prompt
         | llm
     )
