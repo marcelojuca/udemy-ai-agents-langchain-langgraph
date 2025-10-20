@@ -209,18 +209,21 @@ def implement_execute_tool_call(tool_call: Dict, available_tools: List[Tool]) ->
     for tool in available_tools:
         if tool.name == tool_name:
             tool_to_use = tool
-        break
+            break
     
     if tool_to_use is None:
         raise ValueError(f"Tool with name {tool_call['name']} not found!")
     
-    if 'text' in tool_args:
-        result = tool_to_use.func(tool_args['text'])
-    else:
-        first_arg = next(iter(tool_args.values()))
-        result = tool_to_use.func(first_arg)
+    try: 
+        if 'text' in tool_args:
+            result = tool_to_use.func(tool_args['text'])
+        else:
+            first_arg = next(iter(tool_args.values()))
+            result = tool_to_use.func(first_arg)
 
-    return str(result)
+        return str(result)
+    except Exception as e:
+        raise RuntimeError(f"Error executing tool {tool_name}: {str(e)}")
 
 def implement_run_agent_with_tool_calling(model_with_tools: ChatOpenAI, 
                                         user_input: str, 
