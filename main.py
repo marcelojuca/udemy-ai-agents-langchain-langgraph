@@ -16,8 +16,10 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
     
 if __name__ == "__main__":
+
+    ##################  No Retrieval ##################
     print("-----"*10)
-    print("OpenAI LLM response w/o RAG - lesson 49")
+    print("No Retrieval: OpenAI LLM response w/o RAG - lesson 49")
 
     llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
     query = "what is Pinecone in machine learning?"
@@ -25,20 +27,23 @@ if __name__ == "__main__":
     result = chain.invoke(input={})
     print(result)
 
+    ##################  Retrieval: With RAG ##################
     print("-----"*10)
-    print("OpenAI LLM response with RAG (retrieving Pinecone data) - lesson 49")
+    print("Retrieval with RAG: OpenAI LLM and Pinecone data) - lesson 49")
 
     retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat") # https://smith.langchain.com/hub/langchain-ai/retrieval-qa-chat
     combine_docs_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
 
     embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-3-small")
     vectorstore = PineconeVectorStore(index_name=os.getenv("PINECONE_INDEX_NAME"), embedding=embeddings)
+    
     retrieval_chain = create_retrieval_chain(retriever=vectorstore.as_retriever(), combine_docs_chain=combine_docs_chain)
     result = retrieval_chain.invoke(input={"input": query})
     print(result)
 
+    ##################  Retrieval: With RAG LCEL ##################
     print("-----"*10)
-    print("OpenAI LLM response with RAG LCEL (LangChain Expression Language) - lesson 50")
+    print("Retrieval with RAG LCEL (LangChain Expression Language): OpenAI LLM and Pinecone data - lesson 50")
 
     template = """Use the following pieces of retrieved context to answer the question at the end.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
