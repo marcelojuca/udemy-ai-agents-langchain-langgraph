@@ -13,56 +13,72 @@ load_dotenv()
 
 
 if __name__ == "__main__":
+    ##################  Ingestion: Loading data ##################
     print("-----"*10)
-    print("OpenAI LLM response with RAG FAISS - lesson 46")
-    print("Loading data...")
-    pdf_path = "/Users/mhcj/Downloads/GitHub/langchain-course/2210.03629v3.pdf"
+    print("Ingestion: Started")
+    print("OpenAI LLM response with RAG FAISS - lesson 51")
+    print("Ingestion: Loading data...")   
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    pdf_path = os.path.join(script_dir, "2210.03629v3.pdf")
+
     loader = PyPDFLoader(pdf_path)
     doc = loader.load()
     print(f"Loaded {len(doc)} pages")
 
+    ##################  Ingestion: Splitting data ##################
     print("-----"*10)
-    print("Splitting data...")
+    print("Ingestion: Splitting data...")
     text_splitter = CharacterTextSplitter(
         chunk_size=1000, chunk_overlap=30, separator="\n"
     )
     chunks = text_splitter.split_documents(doc)
     print(f"Split into {len(chunks)} chunks")
 
+    ##################  Ingestion: Embedding data ##################
     embeddings = OpenAIEmbeddings(
         openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-3-small"
     )
 
     print("-----"*10)
-    print("Embedding data...")
+    print("Ingestion: Embedding data...")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     print(f"Embedded {len(chunks)} chunks")
 
+    ##################  Ingestion: Saving data ##################
     print("-----"*10)
-    print("Saving data...")
+    print("Ingestion: Saving data...")
     vectorstore.save_local("faiss_index")
     print("Saved data...")
 
+    ##################  Ingestion: Finished ##################
+    print("-----"*10)
+    print("Ingestion: Finished")
+
+    ##################  Retrieval: Loading saved data ##################
     print("-----"*10)
     print("Loading data...")
     new_vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     print(f"Loaded {new_vectorstore.index.ntotal} chunks")
 
+    ##################  Identifying similar documents ##################
     print("-----"*10)
     print("Identifying similar documents to a query (vectorstore = FAISS' similarity_search())...")
     query = "Give me the gist of ReAct in 3 sentences"
     docs = new_vectorstore.similarity_search(query)
     print(docs)
 
+    ##################  Querying data with RAG ##################
     print("-----"*10)
     print("Querying data with RAG (vectorstore = FAISS and retrieval_chain and retrieval_qa_chat_prompt)")
-    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
+    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")  # https://smith.langchain.com/hub/langchain-ai/retrieval-qa-chat
     combine_docs_chain = create_stuff_documents_chain(
         llm=OpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini"),
         prompt=retrieval_qa_chat_prompt,
     )
     retrieval_chain = create_retrieval_chain(
-        retriever=new_vectorstore.as_retriever(), combine_docs_chain=combine_docs_chain
+        retriever=new_vectorstore.as_retriever(), 
+        combine_docs_chain=combine_docs_chain
     )
     result = retrieval_chain.invoke(
         input={"input": query}
