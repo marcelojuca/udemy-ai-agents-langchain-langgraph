@@ -41,7 +41,7 @@ def run_llm(query: str, chat_history: List[Dict[str, Any]] = []):
         retriever=vector_store.as_retriever()
     )
     retrieval_chain = create_retrieval_chain(
-        retriever=history_aware_retriever,        # retriever=vector_store.as_retriever()
+        retriever=history_aware_retriever,        # includes the chat_history not covered by retriever=vector_store.as_retriever()
         combine_docs_chain=stuff_documents_chain
     )
     result = retrieval_chain.invoke({"input": query, "chat_history": chat_history})
