@@ -1,7 +1,7 @@
 ## Project Steps Overview
 
 1. Find and download the LangChain documentation as an example dataset.
-2. Convert the documentation into vectors:
+2. Ingestion: Convert the documentation into vectors:
     - Break each page into chunks.
     - Embed the chunks.
     - Store the resulting vectors in a vector store.

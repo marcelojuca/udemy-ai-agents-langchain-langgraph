@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 
 from backend.core import run_llm
+from backend.guardrails import should_include_sources
 
 load_dotenv()
 
@@ -270,25 +271,24 @@ def create_sources_string(sources_urls: set[str]) -> str:
         return ""
     sources_list = list(sources_urls)
     sources_list.sort()
-    sources_string = "sources:\n"
+    sources_string = "\n\nsources:\n"
     for i, source in enumerate(sources_list):
         sources_string += f"{i+1}. {source}\n"
     return sources_string
 
 
+
 if prompt:
     with st.spinner("🤔 Analyzing your question..."):
 
-        generated_response = run_llm(
-            query=prompt, chat_history=st.session_state["chat_history"]
-        )
-        sources = set(
-            [doc.metadata["source"] for doc in generated_response["source_documents"]]
-        )
+        generated_response = run_llm(query=prompt, chat_history=st.session_state["chat_history"])
+        sources = set([doc.metadata["source"] for doc in generated_response["source_documents"]])   # set() removes duplicates
 
-        formatted_response = (
-            f"{generated_response['result']} \n\n {create_sources_string(sources)}"
-        )
+        # Only include sources if the agent found relevant information based on documents
+        if should_include_sources(generated_response['result'], prompt, generated_response["source_documents"]):
+            formatted_response = (f"{generated_response['result']} \n\n {create_sources_string(sources)}")
+        else:
+            formatted_response = generated_response['result']
 
         st.session_state["user_prompt_history"].append(prompt)
         st.session_state["chat_answer_history"].append(formatted_response)

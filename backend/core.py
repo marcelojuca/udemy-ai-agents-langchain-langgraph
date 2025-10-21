@@ -22,23 +22,31 @@ from langchain_pinecone import PineconeVectorStore
 def run_llm(query: str, chat_history: List[Dict[str, Any]] = []):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     vector_store = PineconeVectorStore(
-        index_name=os.getenv("PINECONE_INDEX_NAME"), embedding=embeddings
-    )
-    chat = ChatOpenAI(verbose=True, temperature=0, model="gpt-4o-mini")
+        index_name=os.getenv("PINECONE_INDEX_NAME"), 
+        embedding=embeddings,
+    ) # this object allows the retrieval like the FAISS.similarity_search() method
 
-    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-    stuff_documents_chain = create_stuff_documents_chain(llm=chat, prompt=retrieval_qa_chat_prompt)
+    llm = ChatOpenAI(verbose=True, temperature=0, model="gpt-4o-mini")
+    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat") # https://smith.langchain.com/hub/langchain-ai/retrieval-qa-chat
+    stuff_documents_chain = create_stuff_documents_chain(
+        llm=llm, 
+        prompt=retrieval_qa_chat_prompt,
+    ) # here happens the augmentation of the retrieved documents
 
     # lesson 60, minute 04:30
-    rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
-    history_aware_retriever = create_history_aware_retriever(llm=chat, prompt=rephrase_prompt,
+    rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase") # https://smith.langchain.com/hub/langchain-ai/chat-langchain-rephrase
+    history_aware_retriever = create_history_aware_retriever(
+        llm=llm, 
+        prompt=rephrase_prompt,
         retriever=vector_store.as_retriever()
     )
-
     retrieval_chain = create_retrieval_chain(
-        history_aware_retriever, combine_docs_chain=stuff_documents_chain
+        retriever=history_aware_retriever,        # retriever=vector_store.as_retriever()
+        combine_docs_chain=stuff_documents_chain
     )
     result = retrieval_chain.invoke({"input": query, "chat_history": chat_history})
+
+    # workaround to get results in a particular format
     new_result = {
         "query": result["input"],
         "result": result["answer"],
